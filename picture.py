@@ -1,7 +1,6 @@
 import hashlib
 import exifread
 import os
-
 from datetime import datetime
 
 EXIF_DATE_TAG_NAME = "EXIF DateTimeOriginal"
@@ -50,6 +49,3 @@ class Picture(object):
 
     def __str__(self):
         return f"{self.file_name} - {self.year}/{self.month} - {self.md5sum}"
-
-    def move(self):
-        raise NotImplementedError
