@@ -39,7 +39,7 @@ def process_picture(picture, target_path, move=False):
     Path(f"{target_directory}").mkdir(parents=True, exist_ok=True)
     if move:
         logger.info(f"Moving picture {picture.file_name} to {target_directory}")
-        shutil.copyfile(picture.full_path, f"{target_directory}/{picture.file_name}")
+        shutil.move(picture.full_path, f"{target_directory}/{picture.file_name}")
     else:
         logger.info(f"Copying picture {picture.file_name} to {target_directory}")
         shutil.copyfile(picture.full_path, f"{target_directory}/{picture.file_name}")
