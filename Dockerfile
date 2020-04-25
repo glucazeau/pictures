@@ -33,6 +33,7 @@ RUN cd ~ && \
     python3 setup.py install --yes USE_AVX_INSTRUCTIONS
 
 RUN pip3 install face_recognition
+RUN pip3 install Pillow
 
 WORKDIR /pictures
 ADD requirements.txt /pictures/

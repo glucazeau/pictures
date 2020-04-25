@@ -3,10 +3,12 @@ import click_log
 import logging
 import shutil
 import face_recognition
+import yaml
 
 from os import listdir
 from os.path import isfile, join
 from pathlib import Path
+from PIL import Image, ExifTags
 
 from picture import Picture
 
@@ -18,17 +20,18 @@ click_log.basic_config(logger)
 
 @click.command()
 @click_log.simple_verbosity_option(logger)
-@click.option('-s', '--source-path', help='Directory containing pictures to process')
-@click.option('-t', '--target-path', help='Directory to move pictures')
+@click.option('-s', '--source-path', help='Directory containing pictures to process', required=True)
+@click.option('-t', '--target-path', help='Directory to move pictures', required=False)
 @click.option('-m', '--move', help='Move or copy pictures to the target path', is_flag=True, default=False)
 @click.option('-f', '--face-recognition', 'enable_face_recognition', help='Try to identify faces', is_flag=True, default=False)
-def process(source_path, target_path, move, enable_face_recognition):
+@click.option('-c', '--comparison-images-directory', help='Set of people pictures to compare to', default="./comparison_images")
+def process(source_path, target_path, move, enable_face_recognition, comparison_images_directory):
     logger.info(f"Listing files in {source_path}")
     files = list_files(source_path)
     logger.info(f"{len(files)} pictures found")
 
     if enable_face_recognition is True:
-        known_faces = load_known_faces()
+        known_faces = load_known_faces(comparison_images_directory)
 
     for file_name in files:
         picture = Picture(source_path, file_name)
@@ -53,46 +56,84 @@ def process_picture(pic, target_path, move=False):
         shutil.copyfile(pic.full_path, f"{target_directory}/{pic.file_name}")
 
 
-def load_known_faces():
+def load_known_faces(comparison_images_directory):
     logger.info("Loading known faces")
 
-    faces = {
-        "Guillaume": "./comparison_images/guillaume.png"
-    }
+    with open(f"{comparison_images_directory}/reference.yaml") as file:
+        people_list = yaml.load(file, Loader=yaml.FullLoader)
 
     known_encodings = {}
-    for name, image in faces.items():
-        logger.info(f"Processing picture of {name}")
-        known_image = face_recognition.load_image_file(image)
-        encodings = face_recognition.face_encodings(known_image)
+    for entry in people_list["people"]:
+        name = entry['name']
+        name_encodings = []
+        for picture in entry['pictures']:
+            logger.info(f"Processing picture of {name}")
+            picture_path = f"{comparison_images_directory}/{picture}"
 
-        if len(encodings) > 0:
-            known_encodings.update({name: encodings[0]})
-        else:
-            logger.warning(f"No face found in {image}")
+            encoding = encode_face(picture_path)
+            if encoding is not None:
+                name_encodings.append(encoding)
+        known_encodings.update({name: name_encodings})
+
     logger.info("Known faces loaded")
     return known_encodings
+
+
+def encode_face(picture_path):
+    rotate_picture(picture_path)
+    known_image = face_recognition.load_image_file(picture_path)
+    encodings = face_recognition.face_encodings(known_image)
+
+    if len(encodings) > 0:
+        return encodings[0]
+    else:
+        logger.warning(f"No face found in {picture_path}")
+        return None
 
 
 def recognize_faces(pic, known_face_encodings):
     logger.info(f"Processing picture {pic.file_name}")
     let_try = True
 
-    unknown_image = face_recognition.load_image_file(pic.full_path)
-    unknown_encodings = face_recognition.face_encodings(unknown_image)
-    if len(unknown_encodings) > 0:
-        unknown_encoding = unknown_encodings[0]
-    else:
+    unknown_encoding = encode_face(pic.full_path)
+    if unknown_encoding is None:
         let_try = False
-        logger.warning(f"No face found")
 
     if let_try is True:
         logger.info("Comparing face with known ones")
-        results = face_recognition.compare_faces(list(known_face_encodings.values()), unknown_encoding)
-        for idx, val in enumerate(results):
-            if bool(val) is True:
-                logger.info(f"{list(known_face_encodings.keys())[idx]} has been found in this picture")
+
+        for name, pictures in known_face_encodings.items():
+            logger.info(f"Looking for {name}")
+            results = face_recognition.compare_faces(pictures, unknown_encoding)
+            if True in results:
+                logger.info(f"{name} has been found in this picture")
     logger.info("Completed")
+
+
+def rotate_picture(picture_path):
+    logger.debug(f"Rotating picture {picture_path} if needed")
+    try:
+        image = Image.open(picture_path)
+
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+
+        exif = dict(image._getexif().items())
+
+        if exif[orientation] == 3:
+            image = image.rotate(180, expand=True)
+        elif exif[orientation] == 6:
+            image = image.rotate(270, expand=True)
+        elif exif[orientation] == 8:
+            image = image.rotate(90, expand=True)
+
+        image.save(picture_path)
+        image.close()
+    except (AttributeError, KeyError, IndexError):
+        # cases: image don't have getexif
+        logger.debug("No EXIF found")
+        pass
 
 
 if __name__ == '__main__':
