@@ -43,6 +43,7 @@ class Picture(object):
                 else:
                     split_with_underscore = file_name_without_extension.split("_")
                     self.date_taken = split_with_underscore[1]
+
                 parsed_date = datetime.strptime(str(self.date_taken), "%Y%m%d")
                 self.year = parsed_date.year
                 self.month = parsed_date.month

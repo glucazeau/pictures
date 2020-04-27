@@ -41,4 +41,4 @@ RUN pip3 install -r requirements.txt
 ADD comparison_images /pictures/comparison_images
 ADD *.py /pictures/
 
-CMD python3 pictures.py -s /source -f
+CMD python3 tag_pictures.py -s /source

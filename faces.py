@@ -1,60 +1,16 @@
-import click
-import click_log
 import logging
-import shutil
-import face_recognition
+import click_log
 import yaml
 
-from os import listdir
-from os.path import isfile, join
-from pathlib import Path
 from PIL import Image, ExifTags
-
-from picture import Picture
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
 
-# Check duplicates
-
-
-@click.command()
-@click_log.simple_verbosity_option(logger)
-@click.option('-s', '--source-path', help='Directory containing pictures to process', required=True)
-@click.option('-t', '--target-path', help='Directory to move pictures', required=False)
-@click.option('-m', '--move', help='Move or copy pictures to the target path', is_flag=True, default=False)
-@click.option('-f', '--face-recognition', 'enable_face_recognition', help='Try to identify faces', is_flag=True, default=False)
-@click.option('-c', '--comparison-images-directory', help='Set of people pictures to compare to', default="./comparison_images")
-def process(source_path, target_path, move, enable_face_recognition, comparison_images_directory):
-    files = list_files(source_path)
-    logger.info(f"{len(files)} pictures found")
-
-    if enable_face_recognition is True:
-        known_faces = load_known_faces(comparison_images_directory)
-
-    count = 1
-    for file_name in files:
-        picture = Picture(source_path, file_name)
-        logger.info(f"{count}/{len(files)} - {picture.file_name}")
-        #process_picture(picture, target_path, move)
-        if enable_face_recognition is True:
-            recognize_faces(picture, known_faces)
-        count += 1
-
-
-def list_files(source_path):
-    return [f for f in listdir(source_path) if isfile(join(source_path, f))]
-
-
-def process_picture(pic, target_path, move=False):
-    target_directory = f"{target_path}/{pic.year}/{pic.month}"
-    Path(f"{target_directory}").mkdir(parents=True, exist_ok=True)
-    if move:
-        logger.info(f"Moving picture {pic.file_name} to {target_directory}")
-        shutil.move(pic.full_path, f"{target_directory}/{pic.file_name}")
-    else:
-        logger.info(f"Copying picture {pic.file_name} to {target_directory}")
-        shutil.copyfile(pic.full_path, f"{target_directory}/{pic.file_name}")
+try:
+    import face_recognition
+except ImportError:
+    faces = None
 
 
 def load_known_faces(comparison_images_directory):
@@ -133,7 +89,3 @@ def rotate_picture(picture_path):
         # cases: image don't have getexif
         logger.debug("No EXIF found")
         pass
-
-
-if __name__ == '__main__':
-    process()
