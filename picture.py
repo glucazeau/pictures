@@ -36,14 +36,20 @@ class Picture(object):
             else:
                 # remove extension
                 file_name_without_extension = os.path.splitext(self.file_name)[0]
-                # try with dash
-                split_with_dash = file_name_without_extension.split("-")
-                if len(split_with_dash) > 1:
-                    self.date_taken = split_with_dash[1]
-                else:
-                    split_with_underscore = file_name_without_extension.split("_")
-                    self.date_taken = split_with_underscore[1]
 
+                split_char = "_"
+
+                if self.file_name.startswith("IMG_"):
+                    file_name_without_extension = file_name_without_extension.replace("IMG_", "")
+
+                if self.file_name.startswith("IMG-"):
+                    file_name_without_extension = file_name_without_extension.replace("IMG-", "")
+                    split_char = "-"
+
+                parts = file_name_without_extension.split(split_char)
+                self.date_taken = parts[0]
+
+                print(self.date_taken)
                 parsed_date = datetime.strptime(str(self.date_taken), "%Y%m%d")
                 self.year = parsed_date.year
                 self.month = parsed_date.month
