@@ -3,12 +3,14 @@ import click_log
 import logging
 import common
 
+from progress.bar import Bar
+
 from picture import Picture
 
 logger = logging.getLogger(__name__)
 click_log.basic_config(logger)
 
-pictures_sum = {}
+pictures_sum = dict()
 
 
 @click.command()
@@ -16,26 +18,27 @@ pictures_sum = {}
 @click.option("-s", "--source-path", help="Directory containing pictures to process", required=True)
 def process(source_path):
     files = common.list_files(source_path)
-    logger.info(f"{len(files)} pictures found")
+    nb_files = len(files)
+    logger.info(f"{nb_files} pictures found")
 
-    duplicates = 0
-    count = 1
-    for file in files:
-        picture = Picture(file)
-        logger.info(f"{count}/{len(files)} - {picture.file_name}")
-        duplicates += process_picture(picture)
-        count += 1
-    logger.info(f"{duplicates} duplicates found")
+    duplicates = {}
+    with Bar('Processing', max=nb_files) as bar:
+        for i in range(nb_files):
+            picture = Picture(files[i])
+            duplicates = process_picture(picture, duplicates)
+            bar.next()
+    logger.info(f"{len(duplicates)} pictures with duplicates found")
+    for md5sum, pictures in duplicates.items():
+        logger.info(f"- {pictures}")
 
 
-def process_picture(pic):
+def process_picture(pic, duplicates):
     if pic.md5sum in pictures_sum.keys():
-        logger.info(f"{pic.full_path} is a duplicate of {pictures_sum[pic.md5sum]}")
-        pictures_sum[pic.md5sum].append(pic.full_path)
-        return 1
+        duplicates[pic.md5sum] = pictures_sum[pic.md5sum]
+        duplicates[pic.md5sum].append(pic.full_path)
     else:
         pictures_sum[pic.md5sum] = [pic.full_path]
-        return 0
+    return duplicates
 
 
 if __name__ == '__main__':
