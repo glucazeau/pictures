@@ -17,8 +17,8 @@ click_log.basic_config(logger)
 
 @click.command()
 @click_log.simple_verbosity_option(logger)
-@click.option("-s", "--source-path', help='Directory containing pictures to process", required=True)
-@click.option("-t", "--target-path', help='Directory to move pictures", required=False)
+@click.option("-s", "--source-path", help="Directory containing pictures to process", required=True)
+@click.option("-t", "--target-path", help="Directory to move pictures", required=False)
 @click.option("-m", "--move', help='Move pictures to the target path instead of copying them)", is_flag=True, default=False)
 def process(source_path, target_path, move):
     files = common.list_files(source_path)
