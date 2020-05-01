@@ -27,9 +27,16 @@ def process(source_path):
             picture = Picture(files[i])
             duplicates = process_picture(picture, duplicates)
             bar.next()
-    logger.info(f"{len(duplicates)} pictures with duplicates found")
-    for md5sum, pictures in duplicates.items():
-        logger.info(f"- {pictures}")
+    nb_duplicates = len(duplicates)
+    if nb_duplicates == 0:
+        logger.info("No duplicates found")
+    elif nb_duplicates == 1:
+        logger.info(f"One picture with duplicates found")
+    else:
+        logger.info(f"{nb_duplicates} pictures with duplicates found")
+    if nb_duplicates > 0:
+        for md5sum, pictures in duplicates.items():
+            logger.info(f"- {pictures}")
 
 
 def process_picture(pic, duplicates):
