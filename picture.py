@@ -7,10 +7,9 @@ EXIF_DATE_TAG_NAME = "EXIF DateTimeOriginal"
 
 
 class Picture(object):
-    def __init__(self, directory, file_name):
-        self.directory = directory
-        self.file_name = file_name
-        self.full_path = f"{self.directory}/{self.file_name}"
+    def __init__(self, full_path):
+        self.file_name = os.path.basename(full_path)
+        self.full_path = full_path
         self.date_taken = None
         self.year = None
         self.month = None

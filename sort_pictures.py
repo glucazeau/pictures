@@ -25,8 +25,8 @@ def process(source_path, target_path, move):
     logger.info(f"{len(files)} pictures found")
 
     count = 1
-    for file_name in files:
-        picture = Picture(source_path, file_name)
+    for file in files:
+        picture = Picture(file)
         logger.info(f"{count}/{len(files)} - {picture.file_name}")
         process_picture(picture, target_path, move)
         count += 1

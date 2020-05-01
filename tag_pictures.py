@@ -22,8 +22,8 @@ def process(source_path, comparison_images_directory):
     known_faces = faces.load_known_faces(comparison_images_directory)
 
     count = 1
-    for file_name in files:
-        picture = Picture(source_path, file_name)
+    for file in files:
+        picture = Picture(file)
         logger.info(f"{count}/{len(files)} - {picture.file_name}")
         faces.recognize_faces(picture, known_faces)
         count += 1
