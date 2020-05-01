@@ -48,7 +48,6 @@ class Picture(object):
                 parts = file_name_without_extension.split(split_char)
                 self.date_taken = parts[0]
 
-                print(self.date_taken)
                 parsed_date = datetime.strptime(str(self.date_taken), "%Y%m%d")
                 self.year = parsed_date.year
                 self.month = parsed_date.month
