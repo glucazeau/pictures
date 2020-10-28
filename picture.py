@@ -6,6 +6,15 @@ from datetime import datetime
 EXIF_DATE_TAG_NAME = "EXIF DateTimeOriginal"
 
 
+class Duplicate(object):
+    def __init__(self, original, duplicate):
+        self.original = original
+        self.duplicates = [duplicate]
+
+    def add_duplicate(self, duplicate):
+        self.duplicates.append(duplicate)
+
+
 class Picture(object):
     def __init__(self, full_path):
         self.file_name = os.path.basename(full_path)
@@ -47,10 +56,15 @@ class Picture(object):
 
                 parts = file_name_without_extension.split(split_char)
                 self.date_taken = parts[0]
-
-                parsed_date = datetime.strptime(str(self.date_taken), "%Y%m%d")
-                self.year = parsed_date.year
-                self.month = parsed_date.month
+                try:
+                    parsed_date = datetime.strptime(str(self.date_taken), "%Y%m%d")
+                    self.year = parsed_date.year
+                    self.month = parsed_date.month
+                except ValueError as e:
+                    pass
 
     def __str__(self):
         return f"{self.file_name} - {self.year}/{self.month} - {self.md5sum}"
+
+    def __eq__(self, obj):
+        return isinstance(obj, Picture) and obj.md5sum == self.md5sum
