@@ -1,5 +1,5 @@
 import hashlib
-import exifread
+#import exifread
 import os
 from datetime import datetime
 
@@ -23,22 +23,28 @@ class Picture(object):
         self.year = None
         self.month = None
 
+        self.md5sum = None
         self.__get_md5_sum__()
-        self.__get_date_taken__()
+        #self.__get_date_taken__()
 
     def __get_md5_sum__(self):
-        hash_md5 = hashlib.md5()
-        with open(self.full_path, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
-        self.md5sum = hash_md5.hexdigest()
+        if self.md5sum is None:
+            hash_md5 = hashlib.md5()
+            with open(self.full_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_md5.update(chunk)
+            self.md5sum = hash_md5.hexdigest()
+        return self.md5sum
 
     def __get_date_taken__(self):
         with open(self.full_path, 'rb') as fh:
             tags = exifread.process_file(fh, stop_tag=EXIF_DATE_TAG_NAME)
             if EXIF_DATE_TAG_NAME in tags:
                 self.date_taken = tags["EXIF DateTimeOriginal"]
-                parsed_date = datetime.strptime(str(self.date_taken), "%Y:%m:%d %H:%M:%S")
+                try:
+                    parsed_date = datetime.strptime(str(self.date_taken), "%Y:%m:%d %H:%M:%S")
+                except ValueError as e:
+                    print(f"Error parsing date on file {self.full_path}: {e}    ")
                 self.year = parsed_date.year
                 self.month = parsed_date.month
             else:
